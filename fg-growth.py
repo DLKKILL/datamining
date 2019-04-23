@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+加载初始数据
+"""
+def load_data():
+    return  [['r','z','h','j','p'],['z','y','x','w','v','u','t','s'],['z'],['r','x','n','o','s'],['y','r','x','z','q','t','p'],['y','z','x','e','q','s','t','m']]
 
 """
 由初始数据集生成初始候选集
@@ -28,7 +33,8 @@ def scanD(C1,D,miniSupport):
                 else:
                     supportMap[item]=supportMap[item]+1
     for key in supportMap:
-        t = supportMap[key]/num
+        #暂时使用最小支持度计数，而不是最小支持度
+        t = supportMap[key]
         if t >= miniSupport:
             freList.append(key)
         supportMap[key]=t
@@ -55,7 +61,7 @@ def sortFreList(frelist,supportMap):
         freSupportMap[item]=supportMap[item]
     items=freSupportMap.items()
     tmp=[[v[1],v[0]] for v in items]
-    tmp.sort()
+    tmp.sort(reverse=True)
     return [tmp[i][1] for i in range(0,len(tmp))]
 
 
@@ -71,7 +77,6 @@ class TreeNode:
         self.childNode={}
     def addChildNode(self,name,value):
         self.childNode[name]=value
-        self.count=self.count+1
     def getParentNode(self):
         return self.parentNode
     def getCount(self):
@@ -82,13 +87,16 @@ class TreeNode:
         return self.linkNode
     def getChildNode(self):
         return self.childNode
-
+    def addCount(self):
+        self.count=self.count+1
+        if self.parentNode != None:
+            self.parentNode.addCount()
 """
 获得某一链表的尾节点
 """
 def getLastNode(node):
     t=node
-    while(t.getLinkNode!=None):
+    while(t.getLinkNode()!=None):
         t=t.getLinkNode()
     return t
 
@@ -97,17 +105,22 @@ def getLastNode(node):
 生成初始fp树
 """
 def creatFpTree(frelist,supportMap,D):
-    head=TreeNode("",0,None)
+    treehead=TreeNode("",0,None)
+    frelist=list(map(frozenset,frelist))
     headtable={}
     for item in D:
-        tmp=head
+        tmp=treehead
         for fre in frelist:
             childNodes=tmp.getChildNode()
-            if fre in item:
+            if fre.issubset(item):
+                # print(fre)
                 if fre in childNodes:
                     tmp=childNodes[fre]
                 else:
-                    node=TreeNode(fre,0,tmp)
+                    fre_name = None
+                    for s in fre:
+                        fre_name=s
+                    node=TreeNode(fre_name,0,tmp)
                     if fre not in headtable:
                         headtable[fre]=node
                     else:
@@ -115,14 +128,50 @@ def creatFpTree(frelist,supportMap,D):
                         preNode.setLinkNode(node)
                     tmp.addChildNode(fre,node)
                     tmp=node
-    return head,headtable
-
+        tmp.addCount()
+    return treehead,headtable
+"""
+发现一个节点的前缀节点路径
+"""
+def getPrePath(node,path):
+    if node.name == "":
+        return
+    print('name: ',node.name)
+    path.append(node.name)
+    getPrePath(node.getParentNode(),path)
+"""
+构建条件模式基
+"""
+def getAllPrePath(headtable,treehead,frelist):
+    allPath={}
+    for fre in frelist:
+        node=headtable[fre]
+        allPath[fre]={}
+        while(node!=None):
+            path=[]
+            getPrePath(node.getParentNode(),path)
+            path=frozenset(path)
+            # print('key=',fre,'  path:',path)
+            allPath[fre][path]=node.getCount()
+            node=node.getLinkNode()
+    return  allPath
+"""
+构建条件FP树
+"""
+def miniTree():
+    pass
 """
 fp-growth算法的主函数
 """
 def fpGrowth(dataSet,miniSupport):
+    dataSet=list(map(frozenset,dataSet))
     freList,supportMap=createFreSet(dataSet,miniSupport)
     sortfrelist=sortFreList(freList,supportMap)
-    head,headtable=creatFpTree(sortfrelist,supportMap,dataSet)
+    treehead,headtable=creatFpTree(sortfrelist,supportMap,dataSet)
+    allpath=getAllPrePath(headtable,treehead,sortfrelist)
+    return allpath,sortfrelist
 if __name__ == "__main__":
-    pass
+    data=load_data();
+    allpath,sortfrelist = fpGrowth(data,3)
+    for fre in sortfrelist:
+        print('key = ',fre,' value = ',allpath[fre])
