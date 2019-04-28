@@ -59,7 +59,7 @@ def aparioriGen(LK,k):
             L1.sort()
             L2.sort()
             if L1==L2:
-                retList.append(LK[i]|LK[j])
+                retList.append(LK[i]| LK[j])
     return retList
 """
 Apriori算法的主要部分
