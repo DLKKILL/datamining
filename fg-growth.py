@@ -124,7 +124,6 @@ def creatFpTree(frelist,supportMap,D):
         for fre in frelist:
             childNodes=tmp.getChildNode()
             if fre.issubset(item):
-                # print(fre)
                 if fre in childNodes:
                     tmp=childNodes[fre]
                 else:
@@ -147,7 +146,6 @@ def creatFpTree(frelist,supportMap,D):
 def getPrePath(node,path):
     if node.name == "":
         return
-    # print('name: ',node.name)
     path.append(node.name)
     getPrePath(node.getParentNode(),path)
 """
@@ -162,7 +160,6 @@ def getAllPrePath(headtable,treehead,frelist):
             path=[]
             getPrePath(node.getParentNode(),path)
             path=frozenset(path)
-            # print('key=',fre,'  path:',path)
             allPath[fre][path]=node.getCount()
             node=node.getLinkNode()
     return  allPath
@@ -172,7 +169,6 @@ def getAllPrePath(headtable,treehead,frelist):
 def getAllfre(frelist,miniSupport,headNode):
     if headNode == None:
         return
-    # print("NodeName:",headNode.name,"   NodeValue:",headNode.count)
     if headNode.name != "" and headNode.count >= miniSupport:
         frelist.append(headNode.name)
     for item in headNode.getChildNode():
@@ -184,11 +180,8 @@ def createMiniTree(fre,allPath,miniSupport):
     frepathSet=allpath[fre]
     temp_freSet=None
     C1=createC1(frepathSet)
-    # print('C1:',frepathSet)
-    # print(frepathSet)
     freList,supportMap=scanD(C1, frepathSet, miniSupport)
     sortfrelist=sortFreList(freList,supportMap)
-    print('sortfrelist:',frepathSet)
     headNode=TreeNode("",0,None)
     for item in frepathSet:
         tmp = headNode
@@ -216,11 +209,32 @@ def fpGrowth(dataSet,miniSupport):
     freList,supportMap=createFreSet(dataSet,miniSupport)
     sortfrelist=sortFreList(freList,supportMap)
     treehead,headtable=creatFpTree(sortfrelist,supportMap,dataSet)
-    allpath=getAllPrePath(headtable,treehead,sortfrelist)
+    allpath = getAllPrePath(headtable,treehead,sortfrelist)
     return allpath,sortfrelist
 if __name__ == "__main__":
     data=load_data()
     allpath,sortfrelist = fpGrowth(data,3)
+    ans=[]
     for fre in sortfrelist:
         frelist=createMiniTree(fre,allpath,3)
-        print(frelist)
+        ans.append(fre)
+        t=[]
+        for item in frelist:
+            t.append(fre|frozenset(item))
+        s=t
+        while(True):
+            h=[]
+            for i in range(len(s)):
+                for j in range(i,len(s)):
+                    x=(s[i]|s[j])
+                    if len(x)==len(s[i])+1 and x not in h:
+                        h.append(x)
+            if(len(h)==0):
+                break
+            t.extend(h)
+            s=h
+        if (len(t) > 0):
+            ans.extend(t)
+    ans.sort()
+    print(ans)
+
